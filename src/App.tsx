@@ -93,7 +93,7 @@ const C = {
 } as const;
 
 // ── コンポーネント ────────────────────────────────────────────────────────────
-export default function ChinaMap({ onProvinceClick, visitedIds }: ChinaMapProps) {
+export default function ChinaMap({ onProvinceClick }: ChinaMapProps) {
   const [hoveredId,    setHoveredId]    = useState<string | null>(null);
   const [modalTarget,  setModalTarget]  = useState<Province | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
