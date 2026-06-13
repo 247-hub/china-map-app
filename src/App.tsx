@@ -253,14 +253,50 @@ function StatsPanel({ experiences }: { experiences: Record<string, number> }) {
   PROVINCES.forEach((p) => { counts[experiences[p.id] ?? 0]++; });
   const visited = total - counts[0];
   const pct = Math.round((visited / total) * 100);
+  const score = Object.values(experiences).reduce(
+  (sum, value) => sum + value,
+  0
+);
+
+const maxScore = total * 5;
 
   return (
     <div style={{ marginTop: 16 }}>
-      {/* 制覇率 */}
-      <div style={{ textAlign: "center", fontSize: 13, color: "#555", marginBottom: 6 }}>
-        中国制覇率　<strong style={{ fontSize: 20, color: "#e05535" }}>{pct}%</strong>
-        　<span style={{ color: "#aaa", fontSize: 12 }}>（{visited} / {total} 省）</span>
-      </div>
+     {/* 経省値 */}
+<div
+  style={{
+    textAlign: "center",
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 4,
+  }}
+>
+  中国経省値　
+  <strong style={{ fontSize: 22, color: "#2c7be5" }}>
+    {score}
+  </strong>
+  <span style={{ color: "#aaa", fontSize: 12 }}>
+    {" "} / {maxScore}
+  </span>
+</div>
+
+{/* 制覇率 */}
+<div
+  style={{
+    textAlign: "center",
+    fontSize: 13,
+    color: "#555",
+    marginBottom: 6,
+  }}
+>
+  中国制覇率　
+  <strong style={{ fontSize: 20, color: "#e05535" }}>
+    {pct}%
+  </strong>
+  <span style={{ color: "#aaa", fontSize: 12 }}>
+    （{visited} / {total} 省）
+  </span>
+</div>
       <div style={{ maxWidth: 360, margin: "0 auto 14px", background: "#e8e2d8", borderRadius: 99, height: 12, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg,#f0a86b,#e05535)", borderRadius: 99, transition: "width 0.4s ease" }} />
       </div>
