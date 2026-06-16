@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-//import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,6 +72,35 @@ const PROVINCES: Province[] = [
   { id: "81", name: "香港特别行政区", d: "M 594.15,631.02 L 592.92,635.3 L 590.47,635.3 L 584.34,635.3 L 583.11,634.59 L 584.34,631.02 L 588.02,628.88 L 590.47,628.88 L 591.7,628.88 L 591.7,631.02 L 594.15,631.02 Z" },
   { id: "82", name: "澳门特别行政区", d: "M 580.04,635.03 L 580.2,635.66 L 579.43,635.92 L 579.28,634.41 L 579.74,634.41 L 580.04,635.03 Z" }
 ] as const;
+function getPathBBox(d: string): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  const path = document.createElementNS(svgNS, "path");
+
+  path.setAttribute("d", d);
+  svg.appendChild(path);
+
+  svg.style.position = "absolute";
+  svg.style.visibility = "hidden";
+
+  document.body.appendChild(svg);
+
+  const bbox = path.getBBox();
+
+  document.body.removeChild(svg);
+
+  return {
+    x: bbox.x,
+    y: bbox.y,
+    width: bbox.width,
+    height: bbox.height,
+  };
+}
 
 // ── experience レベル定義 ────────────────────────────────────────────────────
 // 0=未訪問 1=通過 2=降り立った 3=観光 4=宿泊 5=居住
@@ -98,6 +127,7 @@ export default function ChinaMap({ onProvinceClick }: ChinaMapProps) {
   const [modalTarget,  setModalTarget]  = useState<Province | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [experiences, setExperiences] = useState<Record<string, number>>(() => {
+    
     try {
       const saved = localStorage.getItem("china-experiences");
       return saved ? JSON.parse(saved) : {};
@@ -106,11 +136,34 @@ export default function ChinaMap({ onProvinceClick }: ChinaMapProps) {
     }
   });
 
-  useEffect(() => {
-    localStorage.setItem("china-experiences", JSON.stringify(experiences));
-  }, [experiences]);
+useEffect(() => {
+  localStorage.setItem("china-experiences", JSON.stringify(experiences));
+}, [experiences]);
 
-  const handleClick = (p: Province) => {
+
+const labels = useMemo(() => {
+  const offsets: Record<string, { dx: number; dy: number }> = {
+    "11": { dx: -15, dy: -10 }, // 北京
+    "12": { dx: 15, dy: 10 },   // 天津
+    "31": { dx: 15, dy: 0 },    // 上海
+    "81": { dx: -15, dy: 20 }, // 香港
+    "82": { dx: 15, dy: 10 },   // マカオ
+  };
+
+  return PROVINCES.map((p) => {
+    const bbox = getPathBBox(p.d);
+    const offset = offsets[p.id] ?? { dx: 0, dy: 0 };
+
+    return {
+      id: p.id,
+      name: p.name,
+      cx: bbox.x + bbox.width / 2 + offset.dx,
+      cy: bbox.y + bbox.height / 2 + offset.dy,
+    };
+  });
+}, []);
+
+const handleClick = (p: Province) => {
     setModalTarget(p);
     onProvinceClick?.(p.id, p.name);
   };
@@ -181,7 +234,22 @@ export default function ChinaMap({ onProvinceClick }: ChinaMapProps) {
 
       {/* ref対象: 地図 + ヒントバー + 凡例 */}
       <div ref={mapRef} style={{ background: "#fff", padding: 8, borderRadius: 8 }}>
-    <svg
+
+<TransformWrapper
+  initialScale={2}
+  minScale={1}
+  maxScale={8}
+>
+    <TransformComponent
+  wrapperStyle={{
+    width: "100%",
+  }}
+  contentStyle={{
+    width: "100%",
+  }}
+>
+
+      <svg
               viewBox="0 0 900 720"
               xmlns="http://www.w3.org/2000/svg"
               style={{
@@ -217,7 +285,23 @@ export default function ChinaMap({ onProvinceClick }: ChinaMapProps) {
             onBlur={() => setHoveredId(null)}
           />
         ))}
+{labels.map((l) => (
+  <text
+    key={`label-${l.id}`}
+    x={l.cx}
+    y={l.cy}
+    textAnchor="middle"
+    dominantBaseline="middle"
+    fontSize="5"
+    fill="#333"
+    pointerEvents="none"
+  >
+    {l.name}
+  </text>
+))}
 </svg>
+    </TransformComponent>
+  </TransformWrapper>
 
 {/* ── ホバー中の省名表示 ── */}
 <HintBar hoveredId={hoveredId} experiences={experiences} />
