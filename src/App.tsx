@@ -236,9 +236,10 @@ const handleClick = (p: Province) => {
       <div ref={mapRef} style={{ background: "#fff", padding: 8, borderRadius: 8 }}>
 
 <TransformWrapper
-  initialScale={2}
+  initialScale={1}
   minScale={1}
   maxScale={8}
+  centerOnInit
 >
     <TransformComponent
   wrapperStyle={{
